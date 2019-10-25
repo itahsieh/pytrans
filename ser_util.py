@@ -2,6 +2,9 @@ import sys
 import serial
 import time
 
+sys.path.append('/home/vandine/MachineAnalyzer/lib')
+from MA_utilities import *
+
 def SerialConnect( Port, BaudRate):
     try:
         ser = serial.Serial(
@@ -24,7 +27,9 @@ def SendCommand( ser_port, string):
     
     
 def ListConfig(ser_port):
+    SendCommand( ser_port, 'S')
     SendCommand( ser_port, 'LIST')
+    ser_port.flush()
     while ser_port.inWaiting() > 0:
         response = ser_port.readlines()
         print(
@@ -32,6 +37,10 @@ def ListConfig(ser_port):
             'LIST the configuration of the sensor' +
             bcolors.ENDC
             )
+        #print(response)
+        
         for i in range(len(response)):
             line = response[i].strip().decode('charmap')
-            print(repr(line).strip('"\''))
+            print(line)
+        
+        

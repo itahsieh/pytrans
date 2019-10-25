@@ -2,9 +2,26 @@
 
 import struct
 import time
-import calendar
+import socket
 
 from ser_util import SendCommand, SerialConnect
+
+'''
+# connect socket
+socket_timeout = 2
+try:
+    socket_con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_con.settimeout(socket_timeout)
+    socket_con.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    print 'Socket created'
+except:
+    print 'fail to connect socket'
+    if socket_con:
+        socket_con.close()
+        print 'Socket close'
+    exit()
+'''
+
 
 def bytes_xor(bytes_array):
     checksum = b'\x00'
@@ -24,8 +41,6 @@ tcp_raw = bytearray(b'0'*1200)
 
 
 
-
-
 ser_port = SerialConnect("/dev/ttyM0", 19200)
 SendCommand( ser_port, 'S')
 SendCommand( ser_port, 'RAW')
@@ -37,6 +52,7 @@ SendCommand( ser_port, 'RS')
 # get rid of the leading n records, in case of the firmware buffer (supposed to be 1 record) 
 # ( n * 14 bytes for raw data mode) 
 #ser_port.read(10 * 14 )
+
 
 
 b_count = 0
@@ -56,7 +72,7 @@ while True:
     n_list = len(raw_list)
 
     
-    if len(raw_list[0]) > 0:
+    if 13 > len(raw_list[0]) > 0:
         print 'warning: byte misalignment at head of buffer',b_count,'heading size:', len(raw_list[0]),len(raw_list[1])
     
     if len(raw_list[-1]) < 13:
@@ -78,11 +94,10 @@ while True:
             n_record += 1
             record = True
             
-            #raw_float = struct.unpack( 'f'*3, raw_list[i][0:12] ) 
-            #print raw_float[0], raw_float[1], raw_float[2]
+            raw_float = struct.unpack( 'f'*3, raw_list[i][0:12] ) 
+            print raw_float[0], raw_float[1], raw_float[2]
             
             checksum = bytes_xor(raw_list[i][0:12])
-
             assert(checksum == raw_list[i][12])
             
             raw_record = raw_list[i][0:12] 
@@ -105,7 +120,7 @@ while True:
                 else:
                     n_record += 1
                     record = True
-                    #print i, len(raw_list[i])
+                    print i, len(raw_list[i])
                     raw_record = raw_list[i] + '\xa5' + raw_list[i+1]
                     if len(raw_record) < 13:
                         raw_record = raw_record+ '\xa5' + raw_list[i+2]
@@ -113,17 +128,11 @@ while True:
                     
                     checksum = bytes_xor(raw_record[0:12])
                     assert(checksum == raw_record[12])
-                    
-
-                
-
 
         # append the record
         if record == True:
             tcp_raw[(n_record-1)*12:n_record*12] = raw_record
-    
 
-    
     if due:
         break
 
@@ -132,6 +141,8 @@ ser_port.close()
 
 print 'sampling rate:', max_record / eclapsed,'Hz in ',eclapsed, 'seconds: '
 
+
+#socket_con.close()
 
 
 
