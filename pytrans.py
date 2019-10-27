@@ -4,7 +4,8 @@ import struct
 import time
 import socket
 
-from ser_util import SendCommand, SerialConnect
+sys.path.append('/home/moxa/pytrans/lib')
+from MA_serial import *
 
 '''
 # connect socket
