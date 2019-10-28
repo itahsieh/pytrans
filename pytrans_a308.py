@@ -14,7 +14,7 @@ vis_datatype = ['x_std',  'y_std',  'z_std',
                 'x_skew', 'y_skew', 'z_skew',
                 'x_kurt', 'y_kurt', 'z_kurt']
 n_vis_data = len(vis_datatype)
-n_vis_record = 60
+n_vis_record = 6
 
 
 
@@ -361,6 +361,8 @@ while True:
     if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
         line = raw_input()
         break
+    elif int(n_record) == n_vis_record:
+        break
 
 # stop serial streaming
 SendCommand( ser_port, 'S')
@@ -377,7 +379,7 @@ if debug:
 
         axes.plot(array_firm[i,:], label='firmware')
         axes.plot(array_num[i,:], label='numerical')
-        if vis_datatype[2:] == 'kurt':
+        if vis_datatype[i][2:] == 'kurt':
             axes.plot(array_num2[i,:], label='numerical2')
             axes.set_ylim( top = 5.0, bottom = 0.0)
         axes.set(xlabel='Record number', ylabel = vis_datatype[i], title='Time series of ' + vis_datatype[i])
