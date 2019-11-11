@@ -3,8 +3,10 @@
 import struct
 import time
 import socket
+import sys
 
-sys.path.append('/home/moxa/pytrans/lib')
+
+
 from MA_serial import *
 
 '''
@@ -133,6 +135,10 @@ while True:
         # append the record
         if record == True:
             tcp_raw[(n_record-1)*12:n_record*12] = raw_record
+            
+            if n_record == 100:
+                print '100 records'
+                break
 
     if due:
         break
