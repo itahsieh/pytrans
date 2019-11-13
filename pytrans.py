@@ -73,7 +73,7 @@ if csv2sftp_trans:
 if debug:
     n_vis_data = len(vis_datatype)
     for var in ['array_firm','array_num','array_num2']:
-        exec("%s  = np.zeros((n_vis_data, n_fetch_record))" % var)
+        exec("%s  = np.zeros((n_vis_data, trans_n_record))" % var)
 
 
 
@@ -476,7 +476,7 @@ def FetchingLoop():
             line = raw_input()
             break
         # stop while reaching the number of fetching records
-        if int(n_record) == n_fetch_record:
+        if int(n_record) == trans_n_record:
             break
 
     # stop serial streaming
@@ -488,18 +488,23 @@ def FetchingLoop():
 #########################################
 #       transmission interval loop      #
 #########################################
-sample_time = time.time()
-while True:
-    if time.time() > sample_time:
-        FetchingLoop()
-        sample_time += trans_interval
-    
-    time.sleep(0.1)
-    
-    # stop while press "enter"
-    if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-        line = raw_input()
-        break
+# Continuous or adaptive sampling/monitoring
+if (trans_interval == 0) or trans_adaptive:
+    FetchingLoop()
+# Sampling within an interval (trans_interval)
+else:
+    sample_time = time.time()
+    while True:
+        if time.time() > sample_time:
+            FetchingLoop()
+            sample_time += trans_interval
+        
+        time.sleep(0.1)
+        
+        # stop while press "enter"
+        if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+            line = raw_input()
+            break
 
 # Close serial port
 ser_port.close()
