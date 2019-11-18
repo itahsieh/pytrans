@@ -7,6 +7,7 @@ if platform.machine() == 'x86_64':
 elif platform.node() == 'Moxa':
     Port = '/dev/ttyM0'
     sys.path.append('/home/moxa/pytrans/lib')
+    sys.path.append('/home/moxa/pytrans')
 else:
     print('Port is not defined')
     sys.exit(1)

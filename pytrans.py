@@ -31,15 +31,7 @@ from trans_par import *
 #       Import Libraries        #
 #################################
 import struct, time, socket, sys, select
-
-if debug:
-    import numpy as np
-    from math import sqrt, pow, isnan
-    
-if csv2sftp_trans:
-    import csv, pysftp
-    import datetime
-    import os
+import datetime
 
 from MA_serial import SendCommand
 from MA_utilities import bytes_xor, floatbytes_xor
@@ -52,30 +44,41 @@ output_seq = ['Feature','FFT','RAW']
 axis_dict = {'x':0, 'y':1, 'z':2}
 
 if csv2sftp_trans:
-    sftp_log_dir = './temp'
-    if not os.path.exists(sftp_log_dir):
-        os.makedirs(sftp_log_dir)
+    import csv, pysftp
+    import os
+    sftp_tmp_dir = '/home/moxa/pytrans/temp'
+    if not os.path.exists(sftp_tmp_dir):
+        os.makedirs(sftp_tmp_dir)
         
     srv = pysftp.Connection( 
         host = csv2sftp_host, 
         username = csv2sftp_username,
         password = csv2sftp_password, 
-        log = sftp_log_dir + "/pysftp.log"
+        log = sftp_tmp_dir + "/pysftp.log"
         )
-    #csv_column_header = [
-        #'datetime', 
-        #"Xmean", "Xstd", "Xrms", "Xcrest", "Xskewness", "Xkurtosis", "Xmax", "Xmin", "Xp2p", "Xvel",      
-        #"Ymean", "Ystd", "Yrms", "Ycrest", "Yskewness", "Ykurtosis", "Ymax", "Ymin", "Yp2p", "Yvel",      
-        #"Zmean", "Zstd", "Zrms", "Zcrest", "Zskewness", "Zkurtosis", "Zmax", "Zmin", "Zp2p", "Zvel",      
-        #"Temprature"
-        #]
+
+if murano_trans:
+    import murano_par
+    import requests
+    import json
+    try:
+        token_filename = murano_par.productid + "_" + murano_par.identifier + "_cik"
+        import platform
+        if platform.node() == 'Moxa':
+            token_filename = '/home/moxa/pytrans/' + token_filename
+        with open(token_filename, "r+") as f:
+            murano_CIK = f.read()
+    except Exception as e:
+        print("Unable to read a stored CIK: {}".format(e))
+        exit()
 
 if debug:
+    import numpy as np
+    from math import sqrt, pow, isnan
+
     n_vis_data = len(vis_datatype)
     for var in ['array_firm','array_num','array_num2']:
         exec("%s  = np.zeros((n_vis_data, trans_n_record))" % var)
-
-
 
 ###############################################
 #            Create Socket                    #
@@ -108,7 +111,7 @@ if tcp_trans == True:
 #            PostgreSQL connection            #
 ###############################################    
 if sql_trans == True:
-    import psycopg2, datetime
+    import psycopg2
     try:
         psql_con = psycopg2.connect(
             user        = sql_username,
@@ -137,6 +140,8 @@ def FetchingLoop():
     ######################################################
     #           The fetching loop starts                 #
     ######################################################
+    global sample_time
+    
     n_record = 0.0
     left_data = None
 
@@ -192,11 +197,9 @@ def FetchingLoop():
                                 if n_bytes + len(left_data) == RecordBytes:
                                     record = True
                                     raw_record = left_data + raw_list[i]
+                                    left_data = None
                         
-                        # if the last row is shorter than RecordBytes
-                        elif i == n_list-1:
-                            left_data = raw_list[i]
-                            continue
+                        
 
                         # In case of random "AT" exists inside float data
                         elif n_bytes < RecordBytes:
@@ -213,6 +216,9 @@ def FetchingLoop():
                             n_bytes_accumulated = n_bytes
                             while True:
                                 shift_idx += 1
+                                if shift_idx > n_list - 1:
+                                    print 'fragment warning: shift_idx out of range', shift_idx
+                                    break
                                 NBytes_next = len(raw_list[shift_idx])
 
                                 if NBytes_next < RecordBytes:
@@ -220,13 +226,18 @@ def FetchingLoop():
                                     raw_record = raw_record + b'AT' + raw_list[shift_idx]
                                     if n_bytes_accumulated == RecordBytes:
                                         record = True
+                                        if shift_idx == n_list - 1:
+                                            left_data = None
                                         break
                                     else:
                                         continue
                                 else:
                                     print 'warning: length exceeded', NBytes_next
                                     break
-    
+                        # if the last row is shorter than RecordBytes
+                        elif i == n_list-1:
+                            left_data = raw_list[i]
+                            continue
                                             
                         else: 
                             print 'warning'
@@ -253,13 +264,56 @@ def FetchingLoop():
                             
                             raw_float = struct.unpack( 'f'*31, floats_byte ) 
                                 
+ 
+
+                            
+                            x_mean  = raw_float[0]
+                            x_std   = raw_float[1]
+                            x_rms   = raw_float[2]
+                            x_crest = raw_float[3] 
+                            x_skew  = raw_float[4]
+                            x_kurt  = raw_float[5]
+                            x_max   = raw_float[6]
+                            x_min   = raw_float[7]
+                            x_p2p   = raw_float[8]
+                            x_vel   = raw_float[9]
+                            
+                            y_mean  = raw_float[10]
+                            y_std   = raw_float[11]
+                            y_rms   = raw_float[12]
+                            y_crest = raw_float[13] 
+                            y_skew  = raw_float[14]
+                            y_kurt  = raw_float[15]
+                            y_max   = raw_float[16]
+                            y_min   = raw_float[17]
+                            y_p2p   = raw_float[18]
+                            y_vel   = raw_float[19]
+                            
+                            z_mean  = raw_float[20]
+                            z_std   = raw_float[21]
+                            z_rms   = raw_float[22]
+                            z_crest = raw_float[23]
+                            z_skew  = raw_float[24]
+                            z_kurt  = raw_float[25]
+                            z_max   = raw_float[26]
+                            z_min   = raw_float[27]
+                            z_p2p   = raw_float[28]
+                            z_vel   = raw_float[29]
+                            
+                            temp    = raw_float[30]
+                            
+                            if (x_std > trans_std_threshold) or \
+                               (y_std > trans_std_threshold) or \
+                               (z_std > trans_std_threshold):     
+                                pass
+                            elif time.time() > sample_time:
+                                sample_time += trans_interval
+                            else:
+                                continue
+                            
                             if csv2sftp_trans:
                                 # capture time as CSV filename
-                                
-                                csv_filename = 'fea_' + \
-                                str(DT.year) + str(DT.month) + str(DT.day) + '_' + \
-                                str(DT.hour) + str(DT.minute) + str(DT.second) + \
-                                '.csv'
+                                csv_filename = sftp_tmp_dir + '/' + "fea_{0:0>4d}{1:0>2d}{2:0>2d}_{3:0>2d}{4:0>2d}{5:0>2d}.csv".format( DT.year, DT.month, DT.day, DT.hour, DT.minute, DT.second)
                                 
                                 # open CSV file
                                 with open(csv_filename, 'w') as csvfile:
@@ -274,48 +328,52 @@ def FetchingLoop():
                                     srv.put(csv_filename) 
                                 
                                 os.remove(csv_filename)
+                                
+                            if murano_trans:
+                                headers = {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'X-Exosite-CIK': murano_CIK
+                                }
+                                
+                                data = {"xmean"     :x_mean  ,
+                                        "xstd"      :x_std   ,
+                                        "xrms"      :x_rms   ,
+                                        "xcf"       :x_crest ,
+                                        "xskew"     :x_skew  ,
+                                        "xkurtosis" :x_kurt  ,
+                                        "xp2p"      :x_p2p   ,
+                                        "ymean"     :y_mean  ,
+                                        "ystd"      :y_std   ,
+                                        "yrms"      :y_rms   ,
+                                        "ycf"       :y_crest ,
+                                        "yskew"     :y_skew  ,
+                                        "ykurtosis" :y_kurt  ,
+                                        "yp2p"      :y_p2p   ,
+                                        "zmean"     :z_mean  ,
+                                        "zstd"      :z_std   ,
+                                        "zrms"      :z_rms   ,
+                                        "zcf"       :z_crest ,
+                                        "zskew"     :z_skew  ,
+                                        "zkurtosis" :z_kurt  ,
+                                        "zp2p"      :z_p2p   ,
+                                        "temperature":temp    }
 
+                                payload = {
+                                    "data_in": json.dumps(data)
+                                }
+
+                                responce = requests.post(
+                                    "https://"+murano_par.productid+".m2.exosite.io/onep:v1/stack/alias",
+                                    headers = headers,
+                                    data = payload
+                                    )
+                            
                             
                             if debug:
-                                x_mean  = raw_float[0]
-                                x_std   = raw_float[1]
-                                x_rms   = raw_float[2]
-                                x_crest = raw_float[3] 
-                                x_skew  = raw_float[4]
-                                x_kurt  = raw_float[5]
-                                x_max   = raw_float[6]
-                                x_min   = raw_float[7]
-                                x_p2p   = raw_float[8]
-                                x_vel   = raw_float[9]
-                                
-                                y_mean  = raw_float[10]
-                                y_std   = raw_float[11]
-                                y_rms   = raw_float[12]
-                                y_crest = raw_float[13] 
-                                y_skew  = raw_float[14]
-                                y_kurt  = raw_float[15]
-                                y_max   = raw_float[16]
-                                y_min   = raw_float[17]
-                                y_p2p   = raw_float[18]
-                                y_vel   = raw_float[19]
-                                
-                                z_mean  = raw_float[20]
-                                z_std   = raw_float[21]
-                                z_rms   = raw_float[22]
-                                z_crest = raw_float[23]
-                                z_skew  = raw_float[24]
-                                z_kurt  = raw_float[25]
-                                z_max   = raw_float[26]
-                                z_min   = raw_float[27]
-                                z_p2p   = raw_float[28]
-                                z_vel   = raw_float[29]
-                                
-                                temp    = raw_float[30]
-                            
                                 #print('{:12.4f} {:12.4f} {:12.4f}'.format(x_mean, y_mean, z_mean))
                                 for i in range(n_vis_data):
                                     exec("array_firm[i, int(n_record)] = %s" % vis_datatype[i])
-                                
+                            
                             
                         elif data_type == 'RAW':
                             assert(datatype == str(b'\x33'))
@@ -468,16 +526,19 @@ def FetchingLoop():
                         if float(int(n_record))  == n_record: 
                             print DT, 'received', int(n_record), 'records'
                     
-                    assert(i == 1)
+                    if i != 1:
+                        print "warning: list index is not 1", i, len(raw_list[i])
                     break
-        
+        '''
         # stop while press "enter"
         if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
             line = raw_input()
             break
+        '''
         # stop while reaching the number of fetching records
-        if int(n_record) == trans_n_record:
-            break
+        if not trans_adaptive:
+            if int(n_record) == trans_n_record:
+                break
 
     # stop serial streaming
     SendCommand( ser_port, 'S')
@@ -489,7 +550,10 @@ def FetchingLoop():
 #       transmission interval loop      #
 #########################################
 # Continuous or adaptive sampling/monitoring
-if (trans_interval == 0) or trans_adaptive:
+if (trans_interval == 0):
+    FetchingLoop()
+elif trans_adaptive:
+    sample_time = time.time()
     FetchingLoop()
 # Sampling within an interval (trans_interval)
 else:

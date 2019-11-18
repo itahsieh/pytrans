@@ -6,5 +6,6 @@ rsync -av pre_install.sh                    $MOXA_DIR
 rsync -av ser_conf.py                       $MOXA_DIR
 rsync -av ser_list.py                       $MOXA_DIR
 rsync -av pytrans.py                        $MOXA_DIR
+rsync -av murano_activate_io_config.py      $MOXA_DIR
 rsync -av $HOME/MachineAnalyzer/lib/*.py    $MOXA_DIR'lib'
  

@@ -22,6 +22,7 @@ sudo apt-get install build-essential libssl-dev libffi-dev python-dev
 # 
 pip install cffi --user
 pip install pysftp --user
+pip install requests --user
 pip install pyserial
 pip install numpy
 pip install psycopg2-binary
