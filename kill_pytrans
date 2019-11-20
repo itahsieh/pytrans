@@ -1,0 +1,2 @@
+pid=`ps -ef | grep -v "grep" | grep "python /home/moxa/pytrans/pytrans.py" | awk 'BEGIN {FS=" "}; {print $2}'`
+kill $pid

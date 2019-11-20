@@ -5,7 +5,7 @@ if platform.machine() == 'x86_64':
     Port = '/dev/ttyUSB0'
     sys.path.append('/home/vandine/MachineAnalyzer/lib')
 elif platform.node() == 'Moxa':
-    Port = '/dev/ttyM0'
+    Port = '/dev/ttyM1'
     sys.path.append('/home/moxa/pytrans/lib')
     sys.path.append('/home/moxa/pytrans')
 else:

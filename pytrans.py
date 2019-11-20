@@ -18,6 +18,14 @@ vis_datatype = [ 'z_std',
                  'z_skew',
                  'z_kurt']
 
+
+#################################
+#       Import Libraries        #
+#################################
+import struct, time, socket, sys, select, platform, os
+import datetime
+
+
 #################################################
 # Import serial and  transmission configuration #
 #################################################
@@ -26,12 +34,17 @@ from ser_conf import *
 ser_port = ser_config()
 
 from trans_par import *
-
-#################################
-#       Import Libraries        #
-#################################
-import struct, time, socket, sys, select
-import datetime
+if platform.node() == 'Moxa':
+    par_file = '/home/moxa/pytrans/VibTrans_Par'
+    if os.path.isfile(par_file):
+        with open(par_file,'r') as f:
+            for line in f.readlines():
+                for key in ['trans_interval','trans_adaptive','trans_std_threshold']:
+                    if key in line:
+                         value = line.rstrip().split('=')[1]
+                         exec("%s = %s" % (key,value))
+    else:
+        pass
 
 from MA_serial import SendCommand
 from MA_utilities import bytes_xor, floatbytes_xor
@@ -45,7 +58,6 @@ axis_dict = {'x':0, 'y':1, 'z':2}
 
 if csv2sftp_trans:
     import csv, pysftp
-    import os
     sftp_tmp_dir = '/home/moxa/pytrans/temp'
     if not os.path.exists(sftp_tmp_dir):
         os.makedirs(sftp_tmp_dir)
@@ -63,7 +75,7 @@ if murano_trans:
     import json
     try:
         token_filename = murano_par.productid + "_" + murano_par.identifier + "_cik"
-        import platform
+        
         if platform.node() == 'Moxa':
             token_filename = '/home/moxa/pytrans/' + token_filename
         with open(token_filename, "r+") as f:
@@ -147,6 +159,21 @@ def FetchingLoop():
 
     # restart serial streaming
     SendCommand( ser_port, 'RS')
+    # Drop out the first record
+    for data_type in output_seq:
+        if data_type in output_mode:
+    
+            if data_type == 'Feature':
+                BufferSize = 132 * 1
+                RecordBytes = 130
+            elif data_type == 'RAW':
+                BufferSize = 1544 * 1
+                RecordBytes = 1542
+            else:
+                print('warning: data type is not defined', data_type)
+                sys.exit(1)
+                
+            buffer = ser_port.read(BufferSize)
 
     while True:
         due = False

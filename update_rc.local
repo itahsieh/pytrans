@@ -1,0 +1,8 @@
+#!/bin/bash
+sudo cp rc.local /etc/rc.local
+
+# mkdir -p /home/moxa/sd
+# ln -s /media/sd-mmcblk1p1/ /home/moxa/sd
+# cp VibTrans_Par /home/moxa/sd/VibTrans_Par
+
+
