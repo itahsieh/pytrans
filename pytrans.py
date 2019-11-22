@@ -175,6 +175,7 @@ def FetchingLoop():
                 
             buffer = ser_port.read(BufferSize)
 
+    sample_time = time.time()
     while True:
         due = False
         
@@ -215,18 +216,19 @@ def FetchingLoop():
                         # if the first row is shorter than RecordBytes
                         if i == 0:
                             # empty data due to strip "AT" label
-                            if n_bytes == 0:
-                                if left_data is None:
+                            if left_data is None:
+                                if n_bytes == 0:
                                     continue
-                            
                             # The case the buffer doesn't begin with "AT"
-                            if left_data is not None:
-                                if n_bytes + len(left_data) == RecordBytes:
-                                    record = True
-                                    raw_record = left_data + raw_list[i]
-                                    left_data = None
+                            elif n_bytes + len(left_data) == RecordBytes:
+                                record = True
+                                raw_record = left_data + raw_list[i]
+                                left_data = None
                         
-                        
+                        # if the last row is shorter than RecordBytes
+                        elif i == n_list-1:
+                            left_data = raw_list[i]
+                            continue
 
                         # In case of random "AT" exists inside float data
                         elif n_bytes < RecordBytes:
@@ -238,14 +240,9 @@ def FetchingLoop():
                             # The fragment occurs: 
                             # the first and second are both less RecordBytes bytes
                             
-                            shift_idx = i
                             raw_record = raw_list[i]
                             n_bytes_accumulated = n_bytes
-                            while True:
-                                shift_idx += 1
-                                if shift_idx > n_list - 1:
-                                    print 'fragment warning: shift_idx out of range', shift_idx
-                                    break
+                            for shift_idx in range( i+1, n_list):
                                 NBytes_next = len(raw_list[shift_idx])
 
                                 if NBytes_next < RecordBytes:
@@ -261,15 +258,11 @@ def FetchingLoop():
                                 else:
                                     print 'warning: length exceeded', NBytes_next
                                     break
-                        # if the last row is shorter than RecordBytes
-                        elif i == n_list-1:
-                            left_data = raw_list[i]
-                            continue
+                        
                                             
                         else: 
                             print 'warning'
                         
-                    
                     # The record fetched
                     if record == True:
                         # captured time
@@ -290,9 +283,6 @@ def FetchingLoop():
                                 print check_sum, bytes_xor(floats_byte)
                             
                             raw_float = struct.unpack( 'f'*31, floats_byte ) 
-                                
- 
-
                             
                             x_mean  = raw_float[0]
                             x_std   = raw_float[1]
@@ -331,12 +321,13 @@ def FetchingLoop():
                             
                             if (x_std > trans_std_threshold) or \
                                (y_std > trans_std_threshold) or \
-                               (z_std > trans_std_threshold):     
+                               (z_std > trans_std_threshold):
                                 pass
                             elif time.time() > sample_time:
                                 sample_time += trans_interval
                             else:
                                 continue
+                            
                             
                             if csv2sftp_trans:
                                 # capture time as CSV filename
@@ -550,12 +541,12 @@ def FetchingLoop():
                                     exec("array_num[i,int(n_record)-1] = %s[%d]" % ( vis_datatype[i][2:], axis_dict[vis_datatype[i][0]]) )
                                     if (vis_datatype[i][2:] == 'kurt') or (vis_datatype[i][2:] == 'std'): 
                                         exec("array_num2[i,int(n_record)-1] = %s2[%d]" % ( vis_datatype[i][2:], axis_dict[vis_datatype[i][0]]) )
+                       
                         if float(int(n_record))  == n_record: 
                             print DT, 'received', int(n_record), 'records'
                     
-                    if i != 1:
-                        print "warning: list index is not 1", i, len(raw_list[i])
-                    break
+
+                    
         '''
         # stop while press "enter"
         if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
