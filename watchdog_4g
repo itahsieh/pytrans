@@ -1,0 +1,18 @@
+#!/bin/sh
+
+log_file='/home/moxa/watchdog_4g.log'
+
+while [ 1 ]; do
+    # check 4G connection
+    connection=`sudo cell_mgmt status | grep 'Status' | grep -w connected`
+    if [ -z $connection ]
+    then
+        echo "$(date '+%Y%m%d_%H%M%S') connection missing" >> $log_file
+        until cell_mgmt restart; do 
+            echo "Try again (cell_mgmt restart)..." >> $log_file
+        done
+        echo "4G connected" >> $log_file
+    fi
+
+    sleep 60
+done

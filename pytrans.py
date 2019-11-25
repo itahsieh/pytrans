@@ -34,8 +34,9 @@ from ser_conf import *
 ser_port = ser_config()
 
 from trans_par import *
+'''
 if platform.node() == 'Moxa':
-    par_file = '/home/moxa/pytrans/VibTrans_Par'
+    par_file = '/media/sd-mmcblk1p1/VibTrans_Par'
     if os.path.isfile(par_file):
         with open(par_file,'r') as f:
             for line in f.readlines():
@@ -44,8 +45,8 @@ if platform.node() == 'Moxa':
                          value = line.rstrip().split('=')[1]
                          exec("%s = %s" % (key,value))
     else:
-        pass
-
+        print 'VibTrans_Par is not found'
+'''
 from MA_serial import SendCommand
 from MA_utilities import bytes_xor, floatbytes_xor
 
@@ -61,13 +62,19 @@ if csv2sftp_trans:
     sftp_tmp_dir = '/home/moxa/pytrans/temp'
     if not os.path.exists(sftp_tmp_dir):
         os.makedirs(sftp_tmp_dir)
-        
+    
+    cnopts = pysftp.CnOpts()
+    cnopts.hostkeys = None 
+
     srv = pysftp.Connection( 
         host = csv2sftp_host, 
         username = csv2sftp_username,
         password = csv2sftp_password, 
+        cnopts=cnopts,
         log = sftp_tmp_dir + "/pysftp.log"
         )
+    
+    srv.cd(csv2sftp_directory)
 
 if murano_trans:
     import murano_par
@@ -274,7 +281,11 @@ def FetchingLoop():
                         serial_byte = raw_record[1]
                         
                         if data_type == 'Feature':
-                            assert(datatype == str(b'\x31'))
+                            if datatype == str(b'\x31'):
+                                pass
+                            else:
+                                print 'Feature code mismatched', datatype
+                                
                             floats_byte = raw_record[2:126]
                             check_sum   = raw_record[126:130]
                             
@@ -319,15 +330,18 @@ def FetchingLoop():
                             
                             temp    = raw_float[30]
                             
-                            if (x_std > trans_std_threshold) or \
-                               (y_std > trans_std_threshold) or \
-                               (z_std > trans_std_threshold):
-                                pass
-                            elif time.time() > sample_time:
-                                sample_time += trans_interval
-                            else:
-                                continue
                             
+                            if trans_adaptive:
+                                if (x_std > trans_std_threshold) or \
+                                   (y_std > trans_std_threshold) or \
+                                   (z_std > trans_std_threshold):
+                                    pass
+                                elif (time.time() > sample_time):
+                                    sample_time += trans_interval
+                                else:
+                                    continue
+                            else: 
+                                pass
                             
                             if csv2sftp_trans:
                                 # capture time as CSV filename
@@ -339,12 +353,12 @@ def FetchingLoop():
                                     writer = csv.writer(csvfile)
                                     writer.writerow(raw_float)
                                 
-                                
-                                # change directory
-                                with srv.cd(csv2sftp_directory):
+                                if os.path.isfile(csv_filename):
                                     # upload CSV file  
                                     srv.put(csv_filename) 
-                                
+                                else:
+                                    print csv_filename,'not found'
+
                                 os.remove(csv_filename)
                                 
                             if murano_trans:
@@ -546,7 +560,7 @@ def FetchingLoop():
                             print DT, 'received', int(n_record), 'records'
                     
 
-                    
+
         '''
         # stop while press "enter"
         if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
@@ -583,11 +597,12 @@ else:
         
         time.sleep(0.1)
         
+        '''
         # stop while press "enter"
         if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
             line = raw_input()
             break
-
+        '''
 # Close serial port
 ser_port.close()
 

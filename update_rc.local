@@ -5,4 +5,5 @@ sudo cp rc.local /etc/rc.local
 # ln -s /media/sd-mmcblk1p1/ /home/moxa/sd
 # cp VibTrans_Par /home/moxa/sd/VibTrans_Par
 
-
+# ssh-keygen
+# ssh-copy-id -i ~/.ssh/id_rsa.pub vandine@220.135.143.199

@@ -5,7 +5,7 @@ if platform.machine() == 'x86_64':
     Port = '/dev/ttyUSB0'
     sys.path.append('/home/vandine/MachineAnalyzer/lib')
 elif platform.node() == 'Moxa':
-    Port = '/dev/ttyM1'
+    Port = '/dev/ttyM0'
     sys.path.append('/home/moxa/pytrans/lib')
     sys.path.append('/home/moxa/pytrans')
 else:
@@ -20,11 +20,18 @@ def ser_config():
         BaudRate = 115200
     elif sensor_type == 'hanxi':
         BaudRate = 19200
-
+    
+    print 'Port:', Port, 'Baud Rate:', BaudRate
+    
     ser_port = SerialConnect(Port, BaudRate)
     ser_port.flush()
     SendCommand( ser_port, 'S')
     sensor_conf = sensor(ser_port, print_out = False)
+    
+    
+    if not hasattr(sensor_conf, 'SamplingRate'):
+        print 'sensor is not detected'
+        sys.exit(1)
 
     '''
     # check and set output mode

@@ -1,9 +1,9 @@
-#!/bin/sh
-
-
+#!/bin/bash
 sudo apt-get update
 sudo apt-get install python python-pip
-sudo apt-get install build-essential libssl-dev libffi-dev python-dev
+# sudo apt-get install build-essential libssl-dev libffi-dev python-dev
+# sudo apt-get install libpq-dev
+
 # pip install --upgrade setuptools
 # python -m pip install --upgrade pip
 # sudo vim /usr/bin/pip
@@ -20,9 +20,10 @@ sudo apt-get install build-essential libssl-dev libffi-dev python-dev
 # if __name__ == '__main__':
 #     sys.exit(__main__._main())
 # 
+
 pip install cffi --user
 pip install pysftp --user
-pip install requests --user
+# pip install requests --user
 pip install pyserial
-pip install numpy
-pip install psycopg2-binary
+# pip install numpy
+# pip install psycopg2-binary

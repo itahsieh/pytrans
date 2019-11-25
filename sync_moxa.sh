@@ -15,3 +15,5 @@ rsync -av kill_pytrans                      $MOXA_DIR
 rsync -av VibTrans_Par                      $MOXA_DIR
 rsync -av update_rc.local                   $MOXA_DIR
 rsync -av heartbeat_monitor                 $MOXA_DIR
+rsync -av watchdog_4g                       $MOXA_DIR
+rsync -av watchdog_pytrans                  $MOXA_DIR
