@@ -1,15 +1,15 @@
 #!/bin/sh
 
 log_file='/home/moxa/watchdog_pytrans.log'
+pytrans_log='/home/moxa/pytrans.log'
 
 while [ 1 ]; do
     # check pytrans
     pytrans_pid=`ps -ef | grep -v "grep" | grep "python /home/moxa/pytrans/pytrans.py" | awk 'BEGIN {FS=" "}; {print $2}'`
     if [ -z $pytrans_pid ]
     then
-        echo "$(date '+%Y%m%d_%H%M%S') pytrans.py stopped" >> $log_file
-        /home/moxa/pytrans/pytrans.py
-        echo "pytrans.py restarted" >> $log_file
+        /home/moxa/pytrans/pytrans.py >> $pytrans_log
+        echo "pytrans.py started" >> $log_file
     fi
     
     sleep 60

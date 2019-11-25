@@ -74,7 +74,7 @@ if csv2sftp_trans:
         log = sftp_tmp_dir + "/pysftp.log"
         )
     
-    srv.cd(csv2sftp_directory)
+    
 
 if murano_trans:
     import murano_par
@@ -354,8 +354,9 @@ def FetchingLoop():
                                     writer.writerow(raw_float)
                                 
                                 if os.path.isfile(csv_filename):
-                                    # upload CSV file  
-                                    srv.put(csv_filename) 
+                                    # upload CSV file 
+                                    with srv.cd(csv2sftp_directory):
+                                        srv.put(csv_filename) 
                                 else:
                                     print csv_filename,'not found'
 
