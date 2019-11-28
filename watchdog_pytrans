@@ -6,7 +6,7 @@ pytrans_log='/home/moxa/pytrans.log'
 while [ 1 ]; do
     # check pytrans
     pytrans_pid=`ps -ef | grep -v "grep" | grep "python /home/moxa/pytrans/pytrans.py" | awk 'BEGIN {FS=" "}; {print $2}'`
-    if [ -z $pytrans_pid ]
+    if [ -z "${pytrans_pid}" ]
     then
         /home/moxa/pytrans/pytrans.py >> $pytrans_log
         echo "pytrans.py started" >> $log_file
