@@ -1,0 +1,62 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+log_file='/home/moxa/rc.local.log'
+PAR_FILE='/media/sd-mmcblk1p1/VibTrans_Par'
+
+
+# send stdout and stderr from rc.local to a log file
+exec 1>$log_file 2>&1  
+# tell sh to display commands before execution
+set -x      
+
+
+#
+if [ -f "$PAR_FILE" ]; then
+    PIN_CODE=`grep "PIN_CODE" $PAR_FILE | sed 's/PIN_CODE=//g'`
+    APN_NAME=`grep "APN" $PAR_FILE | sed 's/APN=//g'`
+else
+#     echo "$PAR_FILE is missing"
+#     exit 1
+    PIN_CODE=0000
+    APN_NAME=internet
+fi
+
+                   
+
+# 4G connection
+until cell_mgmt start APN=$APN_NAME PIN=$PIN_CODE 
+do echo "Try again (cell_mgmt start)..."; done	
+
+gateway=`cell_mgmt status | grep Gateway | sed 's/Gateway: //g'`
+# /sbin/route add default gw $gateway
+
+cell_mgmt gps_on
+sleep 1
+
+ntpdate time.stdtime.gov.tw
+hwclock --systohc
+sleep 1
+
+# set time zone
+TZ='Asia/Taipei'; export TZ
+
+#heartbeats detection
+sudo -u moxa /home/moxa/pytrans/heartbeat_monitor &
+sleep 1
+
+# watchdog program
+/home/moxa/pytrans/watchdog_4g &>/dev/null &
+sudo -u moxa /home/moxa/pytrans/watchdog_pytrans &>/dev/null &
+sleep 1
+exit 0
