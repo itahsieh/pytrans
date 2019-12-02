@@ -1,12 +1,40 @@
 #!/usr/bin/env python
 
+###############################################################
+__author__ = "I-Ta Hsieh"
+__copyright__ = "Copyright 2019, Prognosis-Tech"
+__version__ = "0.1"
+__email__ = "ita.hsieh@gmail.com"
+__status__ = "Developing"
+##############################################################
+
+##############################################
+#   Parser difinition
+#  use "./pytrans.py -h" to check the usage
+##############################################
+
+from argparse import ArgumentParser
+parser = ArgumentParser()
+# debug parser
+parser.add_argument("-d", "--debug", 
+                    help="debug mode", 
+                    action='store_true', 
+                    dest="debug", 
+                    default=False)
+# log_output parser
+parser.add_argument("-l", "--log", 
+                    help="log output", 
+                    action='store_true', 
+                    dest="log_outut", 
+                    default=False)
+
+args = parser.parse_args()
+
 ########################################
 #       Debug Mode configuration       #
 ########################################
 
 # debug mode
-debug = False
-
 # visualizing ouput: string array with the element 'show' or 'save'
 vis_output = ['show','save']
 vis_lable = 'static'
@@ -91,7 +119,7 @@ if murano_trans:
         print("Unable to read a stored CIK: {}".format(e))
         exit()
 
-if debug:
+if args.debug:
     import numpy as np
     from math import sqrt, pow, isnan
 
@@ -402,7 +430,7 @@ def FetchingLoop():
                                     )
                             
                             
-                            if debug:
+                            if args.debug:
                                 #print('{:12.4f} {:12.4f} {:12.4f}'.format(x_mean, y_mean, z_mean))
                                 for i in range(n_vis_data):
                                     exec("array_firm[i, int(n_record)] = %s" % vis_datatype[i])
@@ -448,7 +476,7 @@ def FetchingLoop():
                                 count = cursor.rowcount
                                 print(n_record, "Record inserted successfully into raw table")
                                 
-                            if debug:
+                            if args.debug:
                                 raw_float = struct.unpack( 'f'*384, floats_byte ) 
                                 
                                 for var in ['value', 'mean', 'std', 'rms', 'crest', 'skew', 'kurt',
@@ -557,8 +585,9 @@ def FetchingLoop():
                                     if (vis_datatype[i][2:] == 'kurt') or (vis_datatype[i][2:] == 'std'): 
                                         exec("array_num2[i,int(n_record)-1] = %s2[%d]" % ( vis_datatype[i][2:], axis_dict[vis_datatype[i][0]]) )
                        
-                        if float(int(n_record))  == n_record: 
-                            print DT, 'received', int(n_record), 'records'
+                        if args.log_outut:
+                            if float(int(n_record))  == n_record: 
+                                print DT, 'received', int(n_record), 'records'
                     
 
 
@@ -629,7 +658,7 @@ if csv2sftp_trans:
 #############################
 #   Debug Figures Output    #
 #############################
-if debug:
+if args.debug:
     import matplotlib.pyplot as plt
     Spec_figsize = (16, 12)
     Spec_dpi = 80
