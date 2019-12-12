@@ -12,7 +12,7 @@
 # By default this script does nothing.
 
 log_file='/home/moxa/rc.local.log'
-PAR_FILE='/media/sd-mmcblk1p1/VibTrans_Par'
+
 
 
 # send stdout and stderr from rc.local to a log file
@@ -21,18 +21,9 @@ exec 1>$log_file 2>&1
 set -x      
 
 
-#
-if [ -f "$PAR_FILE" ]; then
-    PIN_CODE=`grep "PIN_CODE" $PAR_FILE | sed 's/PIN_CODE=//g'`
-    APN_NAME=`grep "APN" $PAR_FILE | sed 's/APN=//g'`
-else
-#     echo "$PAR_FILE is missing"
-#     exit 1
-    PIN_CODE=0000
-    APN_NAME=internet
-fi
 
-                   
+PIN_CODE=0000
+APN_NAME=internet
 
 # 4G connection
 until cell_mgmt start APN=$APN_NAME PIN=$PIN_CODE 
@@ -52,8 +43,8 @@ sleep 1
 TZ='Asia/Taipei'; export TZ
 
 #heartbeats detection
-sudo -u moxa /home/moxa/pytrans/heartbeat_monitor &
-sleep 1
+# sudo -u moxa /home/moxa/pytrans/heartbeat_monitor &
+# sleep 1
 
 # watchdog program
 /home/moxa/pytrans/watchdog_4g &>/dev/null &

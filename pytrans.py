@@ -30,6 +30,14 @@ parser.add_argument("-l", "--log",
 
 args = parser.parse_args()
 
+
+#################################
+#       Import Libraries        #
+#################################
+import struct, time, socket, sys, select, platform, os
+import datetime
+
+
 ########################################
 #       Debug Mode configuration       #
 ########################################
@@ -46,14 +54,6 @@ vis_datatype = [ 'z_std',
                  'z_skew',
                  'z_kurt']
 
-
-#################################
-#       Import Libraries        #
-#################################
-import struct, time, socket, sys, select, platform, os
-import datetime
-
-
 #################################################
 # Import serial and  transmission configuration #
 #################################################
@@ -62,21 +62,17 @@ from ser_conf import *
 ser_port = ser_config()
 
 from trans_par import *
-'''
-if platform.node() == 'Moxa':
-    par_file = '/media/sd-mmcblk1p1/VibTrans_Par'
-    if os.path.isfile(par_file):
-        with open(par_file,'r') as f:
-            for line in f.readlines():
-                for key in ['trans_interval','trans_adaptive','trans_std_threshold']:
-                    if key in line:
-                         value = line.rstrip().split('=')[1]
-                         exec("%s = %s" % (key,value))
-    else:
-        print 'VibTrans_Par is not found'
-'''
+
 from MA_serial import SendCommand
 from MA_utilities import bytes_xor, floatbytes_xor
+
+
+#################################
+#  Pre-check
+#################################
+# adaptive transfer must be 'Feature' mode included
+if trans_adaptive:
+    assert('Feature' in output_mode)
 
 
 #########################################
@@ -87,23 +83,39 @@ axis_dict = {'x':0, 'y':1, 'z':2}
 
 if csv2sftp_trans:
     import csv, pysftp
-    sftp_tmp_dir = '/home/moxa/pytrans/temp'
+    if platform.machine() == 'x86_64':
+        sftp_tmp_dir = 'sftp_log'
+    elif platform.node() == 'Moxa':
+        sftp_tmp_dir = '/home/moxa/pytrans/sftp_log'
+    elif platform.node() == 'LP-5231':
+        sftp_tmp_dir = '/home/root/pytrans/sftp_log'
+    else:
+        print('sftp_tmp_dir is not defined')
+        sys.exit(1)
+    
     if not os.path.exists(sftp_tmp_dir):
         os.makedirs(sftp_tmp_dir)
     
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None 
-
-    srv = pysftp.Connection( 
-        host = csv2sftp_host, 
-        username = csv2sftp_username,
-        password = csv2sftp_password, 
-        cnopts=cnopts,
-        log = sftp_tmp_dir + "/pysftp.log"
-        )
     
-    
+    try:
+        srv = pysftp.Connection( 
+            host = csv2sftp_host, 
+            username = csv2sftp_username,
+            password = csv2sftp_password, 
+            cnopts=cnopts,
+            log = sftp_tmp_dir + "/pysftp.log"
+            )
+    except Exception as e:
+        print(e)
+        sys.exit("sftp connection error")
+        
 
+    if csv2sftp_directory not in srv.listdir():
+        srv.mkdir(csv2sftp_directory)
+
+        
 if murano_trans:
     import murano_par
     import requests
@@ -174,15 +186,7 @@ if sql_trans == True:
     
 
 
-
-
-    
-    
-    
-    
-    
-    
-    
+# subroutine: fetch data from serial port    
 def FetchingLoop():
     ######################################################
     #           The fetching loop starts                 #
@@ -367,6 +371,8 @@ def FetchingLoop():
                                 elif (time.time() > sample_time):
                                     sample_time += trans_interval
                                 else:
+                                    # adaptive trans but not in sampling interval and not exceed std threshold
+                                    # skip the transfering
                                     continue
                             else: 
                                 pass

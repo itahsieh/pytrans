@@ -1,13 +1,24 @@
-from ser_par import *
 import platform, sys
+from ser_par import *
+
+# Pre-check
+if 'Raw' in output_mode:
+    Estimated_BaudRate = sampling_rate * 3 * 4 * 10
+    if Estimated_BaudRate < BaudRate:
+        print 'warning: estimated baud rate is',Estimated_BaudRate
+        sys.exit(1)
 
 if platform.machine() == 'x86_64':
     Port = '/dev/ttyUSB0'
     sys.path.append('/home/vandine/MachineAnalyzer/lib')
 elif platform.node() == 'Moxa':
-    Port = '/dev/ttyUSB5'
+    Port = '/dev/ttyM0'
     sys.path.append('/home/moxa/pytrans/lib')
     sys.path.append('/home/moxa/pytrans')
+elif platform.node() == 'LP-5231':
+    Port = '/dev/ttyO4'
+    sys.path.append('/home/root/pytrans/lib')
+    sys.path.append('/home/root/pytrans')
 else:
     print('Port is not defined')
     sys.exit(1)
