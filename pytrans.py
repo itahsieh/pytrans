@@ -3,7 +3,7 @@
 ###############################################################
 __author__ = "I-Ta Hsieh"
 __copyright__ = "Copyright 2019, Prognosis-Tech"
-__version__ = "0.1"
+__version__ = "0.1.1"
 __email__ = "ita.hsieh@gmail.com"
 __status__ = "Developing"
 ##############################################################
@@ -59,7 +59,10 @@ vis_datatype = [ 'z_std',
 #################################################
 
 from ser_conf import *
-ser_port = ser_config()
+ser_port = ser_config(115200)
+if ser_port != -1:
+    print 'serial connection failed'
+    sys.exit(1)
 
 from trans_par import *
 
@@ -198,21 +201,6 @@ def FetchingLoop():
 
     # restart serial streaming
     SendCommand( ser_port, 'RS')
-    # Drop out the first record
-    for data_type in output_seq:
-        if data_type in output_mode:
-    
-            if data_type == 'Feature':
-                BufferSize = 132 * 1
-                RecordBytes = 130
-            elif data_type == 'RAW':
-                BufferSize = 1544 * 1
-                RecordBytes = 1542
-            else:
-                print('warning: data type is not defined', data_type)
-                sys.exit(1)
-                
-            buffer = ser_port.read(BufferSize)
 
     sample_time = time.time()
     while True:

@@ -8,7 +8,8 @@ while [ 1 ]; do
     if [ -z "${connection}" ]
     then
 #         echo "$(date '+%Y%m%d_%H%M%S') connection missing" >> $log_file
-        until cell_mgmt restart; do 
+        until cell_mgmt restart; do
+            echo ''
 #             echo "Try again (cell_mgmt restart)..." >> $log_file
         done
     fi
